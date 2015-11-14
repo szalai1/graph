@@ -19,15 +19,15 @@ typedef size_t NodeId;
 template<typename NODE_T, typename EDGE_T>
 class GraphAdj {
  public:
- GraphAdj(size_t max_node) :adj_matrix_{max_node, std::vector<bool>{max_node, false}},
-    used_node_{max_node, false}
-    {}
+ GraphAdj(size_t max_node)
+   :adj_matrix_{max_node, std::vector<bool>{max_node, false}},
+    used_node_{max_node, false} {};
+  NODE_T& get_node(NodeId);
+  EDGE_T& get_edge(NodeId, NodeId);
   void add_node(NodeId, NODE_T &);
   void add_edge(NodeId, NodeId,  EDGE_T &);
   void delete_edge(NodeId, NodeId);
   void delete_node(NodeId);
-  void depth_first(std::function<void(NodeId, NODE_T)> lambda);
-  void breadth_first(std::function<void(NodeId, NODE_T)> lambda);
   bool node_exists(NodeId) const;
   bool edge_exists(NodeId, NodeId) const;
   class node_iterator{
@@ -100,7 +100,6 @@ void GraphAdj<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
   }
 }
 
-
 template<typename NODE_T, typename EDGE_T>
 void GraphAdj<NODE_T, EDGE_T>::delete_node(NodeId id) {
   if (node_exists(id)) {
@@ -117,5 +116,23 @@ void GraphAdj<NODE_T, EDGE_T>::delete_node(NodeId id) {
   }
 }
 
+template<typename NODE_T, typename EDGE_T>
+NODE_T& GraphAdj<NODE_T, EDGE_T>::get_node(NodeId id) {
+  if ( node_exists(id)) {
+    return node_data_[id];
+  }
+  else {
+    throw std::out_of_range("GraphAdj::get_node");
+  }
+}
 
+template<typename NODE_T, typename EDGE_T>
+NODE_T& GraphAdj<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
+  if ( edge_exists(from, to)) {
+    return edge_data_[std::make_pari(from, to)];
+  }
+  else {
+    throw std::out_of_range("GraphAdj::get_edge");
+  }
+}
 #endif
