@@ -1,5 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
+
 #include <vector>
 #include <stack>
 #include <queue>
@@ -7,44 +8,114 @@
 #include <cstddef>
 #include <map>
 #include <set>
+#include <functional>
 
 typedef size_t NodeId;
 
 /**
- * A folytonosan vannak id-zva a nodok, gyakorlati hasznalathoz kell 
- * meg egy reteg ami egy map-ben tarolja, a kinti es bent id prakat, 
- * de lehet az tul nagy overhead.
- *
+ * Szomszedossagi matrix-szal megvalositott graph osztaly.
+ * Akkor hatekony, ha az id-kat 0-tol folytonsan hasznaljuk.
  */
-
-template <typename T>
-class Graph {
+template<typename NODE_T, typename EDGE_T>
+class GraphAdj {
  public:
-  virtual int number_of_nodes() = 0;
-  virtual int number_of_edges() = 0;
-  virtual void add_edge(NodeId s, NodeId d) = 0;
-  virtual void add_node(NodeId n) = 0;
-  virtual void delete_edge(NodeId s, NodeId d) = 0;
-  virtual T get_node_value(NodeId n) = 0;
-  virtual void set_node_value(NodeId n, T value) = 0;
-  virtual T get_edge_value(NodeId s, NodeId d) = 0;
-  virtual void set_edge_value(NodeId s, NodeId d, T value) = 0;
-  virtual bool node_in_graph(NodeId n) = 0;
-  virtual bool edge_in_graph(NodeId n1, NodeId n2) = 0;
-  /*
-   * lehet valami neigbour iterator jobb lenne
-   **/
-  virtual std::vector<NodeId> get_neigbours(NodeId n) = 0;
-  void depth_first(NodeId start);
-  void breadth_first(NodeId start);
+ GraphAdj(size_t max_node) :adj_matrix_{max_node, std::vector<bool>{max_node, false}},
+    used_node_{max_node, false}
+    {}
+  void add_node(NodeId, NODE_T &);
+  void add_edge(NodeId, NodeId,  EDGE_T &);
+  void delete_edge(NodeId, NodeId);
+  void delete_node(NodeId);
+  void depth_first(std::function<void(NodeId, NODE_T)> lambda);
+  void breadth_first(std::function<void(NodeId, NODE_T)> lambda);
+  bool node_exists(NodeId) const;
+  bool edge_exists(NodeId, NodeId) const;
+  class node_iterator{
+  };
+  class edge_iterator{
+  };
  private:
-  Graph();
-  Graph(int verteces);
-  NodeId find_other_part(std::set<NodeId> &already_seen);
-  template<typename STORAGE>
-  void  search(NodeId start );
-  std::vector<T> node_values_;
-  std::map<std::pair<NodeId, NodeId>,T> edge_values_;
+  void expand(size_t max);
+  std::vector<bool> used_node_;
+  std::vector<std::vector<bool>> adj_matrix_;
+  std::map<NodeId, NODE_T> node_data_;
+  std::map<std::pair<NodeId, NodeId>, EDGE_T> edge_data_;
 };
+
+template<typename NODE_T, typename EDGE_T>
+bool GraphAdj<NODE_T, EDGE_T>::node_exists(NodeId id) const {
+  return used_node_.size() > id && used_node_[id];
+}
+
+template<typename NODE_T, typename EDGE_T>
+bool GraphAdj<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
+  return node_exists(from) && node_exists(to) && adj_matrix_[from][to];
+}
+
+template<typename NODE_T, typename EDGE_T>
+void GraphAdj<NODE_T, EDGE_T>::expand(size_t max) {
+  if ( max < used_node_.size() ) {
+    return;
+  }
+  used_node_.resize(max);
+  adj_matrix_.resize(max);
+  for ( size_t ii = 0; ii < max; ++ii) {
+    adj_matrix_[ii].resize(max);
+  }
+}
+
+template<typename NODE_T, typename EDGE_T>
+void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, NODE_T &t) {
+  if ( id > used_node_.size() ) {
+    used_node_.resize(id);
+    adj_matrix_.resize(id);
+    for ( int ii = 0; ii < id; ++ii) {
+      adj_matrix_[ii].resize(id);
+    }
+    node_data_[id] = t;
+  }
+  else if ( used_node_[id] == false ) {
+    used_node_[id] = true;
+    node_data_[id] = t;
+  }
+  else {
+    node_data_[id] = t;
+  }
+}
+
+template<typename NODE_T, typename EDGE_T>
+void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, EDGE_T &t) {
+  expand(from > to ? from : to);
+  used_node_[from] = true;
+  used_node_[to] = true;
+  adj_matrix_[from][to] = true;
+  edge_data_ = t;
+}
+
+template<typename NODE_T, typename EDGE_T>
+void GraphAdj<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
+  if (edge_exists(from, to)) {
+    adj_matrix_[from][to] = false;
+    edge_data_.erase(std::make_pair(from, to));
+  }
+}
+
+
+template<typename NODE_T, typename EDGE_T>
+void GraphAdj<NODE_T, EDGE_T>::delete_node(NodeId id) {
+  if (node_exists(id)) {
+    used_node_[id] = false;
+    node_data_.erase(id);
+    for ( size_t ii = 0; ii < used_node_.size(); ++ii) {
+      if (adj_matrix_[id][ii]) {
+        delete_edge(id, ii);
+      }
+      if (adj_matrix_[ii][id]) {
+        delete_edge(id, ii);
+      }
+    }
+  }
+}
+
 
 #endif
