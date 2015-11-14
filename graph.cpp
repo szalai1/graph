@@ -26,15 +26,18 @@ class GraphAdj {
   void delete_node(NodeId);
   bool node_exists(NodeId) const;
   bool edge_exists(NodeId, NodeId) const;
-  /*std::map<NodeId, NODE_T>::iterator node_begin() {
-    return node_data_.begin();
-  }
-  std::map<NodeId, NODE_T>::iterator node_end() {
-    return node_data_.end();
-    }*/
+  /**
+   * Iterator az elekhez
+   */
   typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator edge_begin();
   typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator edge_end();
-
+  /**
+   * Iteratpor a csucsokhoz
+   */
+  typename std::map<NodeId, NODE_T>::iterator node_begin();
+  typename std::map<NodeId, NODE_T>::iterator node_end();
+  std::vector<NodeId> from(NodeId);
+  std::vector<NodeId> to(NodeId);
  private:
   void expand(size_t max);
   std::vector<bool> used_node_;
@@ -51,6 +54,16 @@ typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, 
 template<typename NODE_T, typename EDGE_T>
 typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_end() {
     return edge_data_.end();
+}
+
+template<typename NODE_T, typename EDGE_T>
+typename std::map<NodeId, NODE_T>::iterator GraphAdj<NODE_T, EDGE_T>::node_begin() {
+    return node_data_.begin();
+}
+
+template<typename NODE_T, typename EDGE_T>
+typename std::map<NodeId, NODE_T>::iterator GraphAdj<NODE_T, EDGE_T>::node_end() {
+    return node_data_.end();
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -145,6 +158,28 @@ EDGE_T& GraphAdj<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
   else {
     throw std::out_of_range("GraphAdj::get_edge");
   }
+}
+
+template<typename NODE_T, typename EDGE_T>
+std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::from(NodeId id) {
+  std::vector<NodeId> from{};
+  for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
+    if (adj_matrix_[id][ii]) {
+      from.push_back(ii);
+    }
+  }
+  return from;
+}
+
+template<typename NODE_T, typename EDGE_T>
+std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::to(NodeId id) {
+  std::vector<NodeId> to{};
+  for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
+    if (adj_matrix_[ii][id]) {
+      from.push_back(ii);
+    }
+  }
+  return to;
 }
 
 int main() {
