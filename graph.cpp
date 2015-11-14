@@ -1,8 +1,6 @@
 #include "graph.h"
 
 
-
-
 void do_somethind(NodeId node) {
   std::cout << node << std::endl;
 }
