@@ -11,6 +11,7 @@ typedef size_t NodeId;
 /**
  * Szomszedossagi matrix-szal megvalositott graph osztaly.
  * Akkor hatekony, ha az id-kat 0-tol folytonsan hasznaljuk.
+ * NODE_T es EDGE_T -nek legyen default construktora
  */
 template<typename NODE_T, typename EDGE_T>
 class GraphAdj {
@@ -90,15 +91,8 @@ void GraphAdj<NODE_T, EDGE_T>::expand(size_t max) {
 
 template<typename NODE_T, typename EDGE_T>
 void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
-  if ( id > used_node_.size() ) {
-    used_node_.resize(id);
-    adj_matrix_.resize(id);
-    for ( int ii = 0; ii < id; ++ii) {
-      adj_matrix_[ii].resize(id);
-    }
-    node_data_[id] = t;
-  }
-  else if ( used_node_[id] == false ) {
+  expand(id)
+  if ( used_node_[id] == false ) {
     used_node_[id] = true;
     node_data_[id] = t;
   }
