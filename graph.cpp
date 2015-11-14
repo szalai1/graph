@@ -58,12 +58,12 @@ typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, 
 
 template<typename NODE_T, typename EDGE_T>
 typename std::map<NodeId, NODE_T>::iterator GraphAdj<NODE_T, EDGE_T>::node_begin() {
-    return node_data_.begin();
+  return node_data_.begin();
 }
 
 template<typename NODE_T, typename EDGE_T>
 typename std::map<NodeId, NODE_T>::iterator GraphAdj<NODE_T, EDGE_T>::node_end() {
-    return node_data_.end();
+  return node_data_.end();
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -109,6 +109,12 @@ void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
 
 template<typename NODE_T, typename EDGE_T>
 void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t) {
+  if (!node_exists(from)) {
+    add_node(from, NODE_T{});
+  }
+  if (!node_exists(to)) {
+    add_node(to, NODE_T{});
+  }
   expand(from > to ? from : to);
   used_node_[from] = true;
   used_node_[to] = true;
@@ -162,13 +168,13 @@ EDGE_T& GraphAdj<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
 
 template<typename NODE_T, typename EDGE_T>
 std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::from(NodeId id) {
-  std::vector<NodeId> from{};
+  std::vector<NodeId> from_{};
   for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
     if (adj_matrix_[id][ii]) {
-      from.push_back(ii);
+      from_.push_back(ii);
     }
   }
-  return from;
+  return from_;
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -176,23 +182,25 @@ std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::to(NodeId id) {
   std::vector<NodeId> to{};
   for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
     if (adj_matrix_[ii][id]) {
-      from.push_back(ii);
+      to.push_back(ii);
     }
   }
   return to;
 }
 
 int main() {
-  GraphAdj<int,int> G{100};
-  for (int ii = 0; ii < 100; ++ii) {
-    for ( int jj = 0; jj < 100; ++jj) {
-      if ( rand() % 5 == 1){
-        G.add_edge(ii, jj, ii*jj);
-      }
+  GraphAdj<int,int> G{10};
+  for (int ii = 0; ii < 5; ++ii) {
+    for ( int jj = 0; jj < 4; ++jj) {
+        G.add_edge(ii*2, jj*2+1, ii*10 + jj);
     }
   }
-  for (auto it = G.edge_begin(); it != G.edge_end(); ++it) {
-    std::cout << it->first.first << " " << it->first.second << " " << it->second << std::endl; 
+  for (auto it = G.node_begin(); it != G.node_end(); ++it) {
+    std::cout << "==== " << it->first <<  " ===="<< std::endl;
+    auto to = G.from(it->first);
+    for (auto ii : to) {
+      std::cout << " " << ii << std::endl;
+    }
   }
 
 }
