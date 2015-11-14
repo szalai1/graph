@@ -127,12 +127,17 @@ NODE_T& GraphAdj<NODE_T, EDGE_T>::get_node(NodeId id) {
 }
 
 template<typename NODE_T, typename EDGE_T>
-NODE_T& GraphAdj<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
+EDGE_T& GraphAdj<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
   if ( edge_exists(from, to)) {
-    return edge_data_[std::make_pari(from, to)];
+    return edge_data_[std::make_pair(from, to)];
   }
   else {
     throw std::out_of_range("GraphAdj::get_edge");
   }
 }
+
+int main () {
+
+}
+
 #endif
