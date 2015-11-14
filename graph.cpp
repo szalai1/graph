@@ -39,6 +39,7 @@ class GraphAdj {
   typename std::map<NodeId, NODE_T>::iterator node_end();
   std::vector<NodeId> from(NodeId);
   std::vector<NodeId> to(NodeId);
+  std::vector<NodeId> get_nodes();
  private:
   void expand(size_t max);
   std::vector<bool> used_node_;
@@ -91,8 +92,8 @@ void GraphAdj<NODE_T, EDGE_T>::expand(size_t max) {
 
 template<typename NODE_T, typename EDGE_T>
 void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
-  expand(id)
-  if ( used_node_[id] == false ) {
+  expand(id+1);
+  if (!used_node_[id]) {
     used_node_[id] = true;
     node_data_[id] = t;
   }
@@ -109,7 +110,7 @@ void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t)
   if (!node_exists(to)) {
     add_node(to, NODE_T{});
   }
-  expand(from > to ? from : to);
+  expand(from > to ? from+1 : to+1);
   used_node_[from] = true;
   used_node_[to] = true;
   adj_matrix_[from][to] = true;
@@ -182,13 +183,34 @@ std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::to(NodeId id) {
   return to;
 }
 
+template<typename NODE_T, typename EDGE_T>
+std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::get_nodes() {
+  std::vector<NodeId> nodes;
+  for (NodeId ii = 0; ii < used_node_.size();++ii) {
+    if (used_node_[ii]) {
+      nodes.push_back(ii);
+    }
+  }
+  return nodes;
+}
+
+template<typename NODE_T, typename EDGE_T>
+void DepthFirst(GraphAdj<NODE_T, EDGE_T> G, NodeId start, std::function<void(NODE_T)> f) {
+  
+}
+
+
+
 int main() {
   GraphAdj<int,int> G{10};
+
+  G.delete_node(23);
   for (int ii = 0; ii < 5; ++ii) {
     for ( int jj = 0; jj < 4; ++jj) {
         G.add_edge(ii*2, jj*2+1, ii*10 + jj);
     }
   }
+  G.delete_node(4);
   for (auto it = G.node_begin(); it != G.node_end(); ++it) {
     std::cout << "==== " << it->first <<  " ===="<< std::endl;
     auto to = G.from(it->first);
