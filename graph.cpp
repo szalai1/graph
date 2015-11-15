@@ -7,6 +7,8 @@
 #include <set>
 #include <functional>
 #include <cstdlib>
+#include <queue>
+
 typedef size_t NodeId;
 /**
  * Szomszedossagi matrix-szal megvalositott graph osztaly.
@@ -39,7 +41,12 @@ class GraphAdj {
   typename std::map<NodeId, NODE_T>::iterator node_end();
   std::vector<NodeId> from(NodeId);
   std::vector<NodeId> to(NodeId);
-  std::vector<NodeId> get_nodes();
+  std::set<NodeId> get_nodes();
+  void call(NodeId id, std::function<void(NODE_T&)> f) {
+    if (node_exists(id)) {
+      f(node_data_[id]);
+    }
+  }
  private:
   void expand(size_t max);
   std::vector<bool> used_node_;
@@ -184,26 +191,56 @@ std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::to(NodeId id) {
 }
 
 template<typename NODE_T, typename EDGE_T>
-std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::get_nodes() {
-  std::vector<NodeId> nodes;
+std::set<NodeId> GraphAdj<NODE_T, EDGE_T>::get_nodes() {
+  std::set<NodeId> nodes;
   for (NodeId ii = 0; ii < used_node_.size();++ii) {
     if (used_node_[ii]) {
-      nodes.push_back(ii);
+      nodes.insert(ii);
     }
   }
   return nodes;
 }
 
 template<typename NODE_T, typename EDGE_T>
-void DepthFirst(GraphAdj<NODE_T, EDGE_T> G, NodeId start, std::function<void(NODE_T)> f) {
-  
+void depth_first(GraphAdj<NODE_T,EDGE_T> &G,
+                 std::queue<NodeId> &fifo,
+                 std::set<NodeId> &all_node,
+                 std::function<void(NODE_T&)> f) {
+  if (all_node.empty()) {
+    return;
+  }
+  if (fifo.empty()) {
+    fifo.push(*(all_node.begin()));
+  }
+  auto next_id = fifo.front();
+  while (all_node.find(next_id) == all_node.end() ) {
+    next_id = fifo.front();
+  }
+
+  auto neigbors = G.from(next_id);
+  //  all_node
+  G.call(next_id, f);
+  for (auto i : neigbors) {
+    fifo.push(i);
+  }
+  all_node.erase(next_id);
+  depth_first(G, fifo, all_node, f);
+}
+
+
+template<typename NODE_T, typename EDGE_T>
+void DepthFirst(GraphAdj<NODE_T, EDGE_T> &G, NodeId start, std::function<void(NODE_T&)> f) {
+  auto neigbors = std::queue<NodeId>{G.from(start)};
+  neigbors.push(start);
+  auto all_node = G.get_nodes();
+  depth_first(G, neigbors, all_node, f);
 }
 
 
 
 int main() {
   GraphAdj<int,int> G{10};
-
+  G.add_node(25, 1000);
   G.delete_node(23);
   for (int ii = 0; ii < 5; ++ii) {
     for ( int jj = 0; jj < 4; ++jj) {
@@ -211,13 +248,21 @@ int main() {
     }
   }
   G.delete_node(4);
-  for (auto it = G.node_begin(); it != G.node_end(); ++it) {
+  // G.call(2,[](int &x){std::cout << "labda " << x << std::endl; } );
+  DepthFirst<int,int>(G, 2, [](int &x){std::cout << "labda " << x << std::endl; });
+  /* for (auto it = G.node_begin(); it != G.node_end(); ++it) {
     std::cout << "==== " << it->first <<  " ===="<< std::endl;
     auto to = G.from(it->first);
+    G.call(it->first,[](int &x) {
+        x+=42;
+        std::cout << "node value : " << x << std::endl;});
+        G.call(it->first,[](int &x) {
+        x+=42;
+        std::cout << "node value : " << x << std::endl;});
     for (auto ii : to) {
       std::cout << " " << ii << std::endl;
     }
-  }
+    }*/
 
 }
 
