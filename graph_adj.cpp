@@ -11,14 +11,14 @@
 
 typedef size_t NodeId;
 /**
- * Ellistaval
+ * Szomszedossagi matrix-szal megvalositott graph osztaly.
  * Akkor hatekony, ha az id-kat 0-tol folytonsan hasznaljuk.
  * NODE_T es EDGE_T -nek legyen default construktora
  */
 template<typename NODE_T, typename EDGE_T>
-class GraphEdgeList {
+class GraphAdj {
  public:
-  GraphEdgeList(size_t max_node) {
+  GraphAdj(size_t max_node) {
     expand(max_node);
   }
   NODE_T& get_node(NodeId);
@@ -48,45 +48,45 @@ class GraphEdgeList {
     }
   }
  private:
-  //void expand(size_t max);
+  void expand(size_t max);
   std::vector<bool> used_node_;
-  std::map<NodeId,std::vector<bool>> edge_list_;
+  std::vector<std::vector<bool>> adj_matrix_;
   std::map<NodeId, NODE_T> node_data_;
   std::map<std::pair<NodeId, NodeId>, EDGE_T> edge_data_;
 };
 
 template<typename NODE_T, typename EDGE_T>
-typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphEdgeList<NODE_T, EDGE_T>::edge_begin() {
+typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_begin() {
     return edge_data_.begin();
 }
 
 template<typename NODE_T, typename EDGE_T>
-typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphEdgeList<NODE_T, EDGE_T>::edge_end() {
+typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_end() {
     return edge_data_.end();
 }
 
 template<typename NODE_T, typename EDGE_T>
-typename std::map<NodeId, NODE_T>::iterator GraphEdgeList<NODE_T, EDGE_T>::node_begin() {
+typename std::map<NodeId, NODE_T>::iterator GraphAdj<NODE_T, EDGE_T>::node_begin() {
   return node_data_.begin();
 }
 
 template<typename NODE_T, typename EDGE_T>
-typename std::map<NodeId, NODE_T>::iterator GraphEdgeList<NODE_T, EDGE_T>::node_end() {
+typename std::map<NodeId, NODE_T>::iterator GraphAdj<NODE_T, EDGE_T>::node_end() {
   return node_data_.end();
 }
 
 template<typename NODE_T, typename EDGE_T>
-bool GraphEdgeList<NODE_T, EDGE_T>::node_exists(NodeId id) const {
-  return edge_list_.find(id) != edge_list_.end();
+bool GraphAdj<NODE_T, EDGE_T>::node_exists(NodeId id) const {
+  return used_node_.size() > id && used_node_[id];
 }
 
 template<typename NODE_T, typename EDGE_T>
-bool GraphEdgeList<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
-  return node_exists(from) && node_exists(to) && edge_list_[from].find(to) != edge_list_[from].end();
+bool GraphAdj<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
+  return node_exists(from) && node_exists(to) && adj_matrix_[from][to];
 }
-/*
+
 template<typename NODE_T, typename EDGE_T>
-void GraphEdgeList<NODE_T, EDGE_T>::expand(size_t max) {
+void GraphAdj<NODE_T, EDGE_T>::expand(size_t max) {
   if ( max < used_node_.size() ) {
     return;
   }
@@ -96,11 +96,12 @@ void GraphEdgeList<NODE_T, EDGE_T>::expand(size_t max) {
     adj_matrix_[ii].resize(max);
   }
 }
-*/
+
 template<typename NODE_T, typename EDGE_T>
-void GraphEdgeList<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
-  if (edge_list_.find(id) == edge_list_.end()) {
-    edge_list_[id] = std::vector<NodeId>{};
+void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
+  expand(id+1);
+  if (!used_node_[id]) {
+    used_node_[id] = true;
     node_data_[id] = t;
   }
   else {
@@ -109,61 +110,66 @@ void GraphEdgeList<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
 }
 
 template<typename NODE_T, typename EDGE_T>
-void GraphEdgeList<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t) {
+void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t) {
   if (!node_exists(from)) {
     add_node(from, NODE_T{});
   }
   if (!node_exists(to)) {
     add_node(to, NODE_T{});
   }
-  if ( !edge_exists(from, to) ){
-    adj_matrix_[from].push_back(to);
-  }
+  expand(from > to ? from+1 : to+1);
+  used_node_[from] = true;
+  used_node_[to] = true;
+  adj_matrix_[from][to] = true;
   edge_data_[std::make_pair(from, to)] = t;
 }
 
 template<typename NODE_T, typename EDGE_T>
-void GraphEdgeList<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
+void GraphAdj<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
   if (edge_exists(from, to)) {
-    auto it = edge_list_[from].find(to);
-    adj_matrix_[from].erase(it);
+    adj_matrix_[from][to] = false;
     edge_data_.erase(std::make_pair(from, to));
   }
 }
 
 template<typename NODE_T, typename EDGE_T>
-void GraphEdgeList<NODE_T, EDGE_T>::delete_node(NodeId id) {
+void GraphAdj<NODE_T, EDGE_T>::delete_node(NodeId id) {
   if (node_exists(id)) {
+    used_node_[id] = false;
     node_data_.erase(id);
-    edge_list.erase(edge_list_.find(id));
-    for ( auto ii : edge_list_) {
-      delete_edge(ii.first, id);
+    for ( size_t ii = 0; ii < used_node_.size(); ++ii) {
+      if (adj_matrix_[id][ii]) {
+        delete_edge(id, ii);
+      }
+      if (adj_matrix_[ii][id]) {
+        delete_edge(id, ii);
+      }
     }
   }
 }
 
 template<typename NODE_T, typename EDGE_T>
-NODE_T& GraphEdgeList<NODE_T, EDGE_T>::get_node(NodeId id) {
+NODE_T& GraphAdj<NODE_T, EDGE_T>::get_node(NodeId id) {
   if ( node_exists(id)) {
     return node_data_[id];
   }
   else {
-    throw std::out_of_range("GraphEdgeList::get_node");
+    throw std::out_of_range("GraphAdj::get_node");
   }
 }
 
 template<typename NODE_T, typename EDGE_T>
-EDGE_T& GraphEdgeList<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
+EDGE_T& GraphAdj<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
   if ( edge_exists(from, to)) {
     return edge_data_[std::make_pair(from, to)];
   }
   else {
-    throw std::out_of_range("GraphEdgeList::get_edge");
+    throw std::out_of_range("GraphAdj::get_edge");
   }
 }
 
 template<typename NODE_T, typename EDGE_T>
-std::vector<NodeId> GraphEdgeList<NODE_T, EDGE_T>::from(NodeId id) {
+std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::from(NodeId id) {
   std::vector<NodeId> from_{};
   for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
     if (adj_matrix_[id][ii]) {
@@ -174,15 +180,18 @@ std::vector<NodeId> GraphEdgeList<NODE_T, EDGE_T>::from(NodeId id) {
 }
 
 template<typename NODE_T, typename EDGE_T>
-std::vector<NodeId> GraphEdgeList<NODE_T, EDGE_T>::to(NodeId id) {
-  if (node_exists(id)) {
-    return edge_list_[id];
+std::vector<NodeId> GraphAdj<NODE_T, EDGE_T>::to(NodeId id) {
+  std::vector<NodeId> to{};
+  for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
+    if (adj_matrix_[ii][id]) {
+      to.push_back(ii);
+    }
   }
-  return std::vector{};
+  return to;
 }
 
 template<typename NODE_T, typename EDGE_T>
-std::set<NodeId> GraphEdgeList<NODE_T, EDGE_T>::get_nodes() {
+std::set<NodeId> GraphAdj<NODE_T, EDGE_T>::get_nodes() {
   std::set<NodeId> nodes;
   for (NodeId ii = 0; ii < used_node_.size();++ii) {
     if (used_node_[ii]) {
@@ -193,7 +202,7 @@ std::set<NodeId> GraphEdgeList<NODE_T, EDGE_T>::get_nodes() {
 }
 
 template<typename NODE_T, typename EDGE_T>
-void depth_first(GraphEdgeList<NODE_T,EDGE_T> &G,
+void depth_first(GraphAdj<NODE_T,EDGE_T> &G,
                  std::stack<NodeId, std::vector<NodeId>> &fifo,
                  std::set<NodeId> &all_node,
                  std::function<void(NODE_T&)> f) {
@@ -228,7 +237,7 @@ void depth_first(GraphEdgeList<NODE_T,EDGE_T> &G,
 
 // pelda melysegi bejaras az osztaly hasznalatara 
 template<typename NODE_T, typename EDGE_T>
-void DepthFirst(GraphEdgeList<NODE_T, EDGE_T> &G, NodeId start, std::function<void(NODE_T&)> f) {
+void DepthFirst(GraphAdj<NODE_T, EDGE_T> &G, NodeId start, std::function<void(NODE_T&)> f) {
   auto n_vec = G.from(start);
   std::stack<NodeId, std::vector<NodeId>> neigbors(n_vec);
   neigbors.push(start);
@@ -241,7 +250,7 @@ void DepthFirst(GraphEdgeList<NODE_T, EDGE_T> &G, NodeId start, std::function<vo
 
 
 int main() {
-  GraphEdgeList<int,int> G{10};
+  GraphAdj<int,int> G{10};
   for (int ii = 0; ii < 5; ++ii) {
     for ( int jj = 5; jj < 10; ++jj) {
       G.add_node(ii, ii);
