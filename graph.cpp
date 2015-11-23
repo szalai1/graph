@@ -50,7 +50,8 @@ class GraphEdgeList {
  private:
   //void expand(size_t max);
   std::vector<bool> used_node_;
-  std::map<NodeId,std::vector<bool>> edge_list_;
+  std::map<NodeId,std::vector<bool>> edge_list_from_;
+  std::map<NodeId,std::vector<bool>> edge_list_to_;
   std::map<NodeId, NODE_T> node_data_;
   std::map<std::pair<NodeId, NodeId>, EDGE_T> edge_data_;
 };
@@ -77,12 +78,12 @@ typename std::map<NodeId, NODE_T>::iterator GraphEdgeList<NODE_T, EDGE_T>::node_
 
 template<typename NODE_T, typename EDGE_T>
 bool GraphEdgeList<NODE_T, EDGE_T>::node_exists(NodeId id) const {
-  return edge_list_.find(id) != edge_list_.end();
+  return edge_list_.find(id) != edge_list_from_.end();
 }
 
 template<typename NODE_T, typename EDGE_T>
 bool GraphEdgeList<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
-  return node_exists(from) && node_exists(to) && edge_list_[from].find(to) != edge_list_[from].end();
+  return node_exists(from) && node_exists(to) && edge_list_from_[from].find(to) != edge_list_from_[from].end();
 }
 /*
 template<typename NODE_T, typename EDGE_T>
@@ -100,7 +101,8 @@ void GraphEdgeList<NODE_T, EDGE_T>::expand(size_t max) {
 template<typename NODE_T, typename EDGE_T>
 void GraphEdgeList<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
   if (edge_list_.find(id) == edge_list_.end()) {
-    edge_list_[id] = std::vector<NodeId>{};
+    edge_list_from_[id] = std::vector<NodeId>{};
+    edge_list_to_[id] = std::vector<NodeId>{};
     node_data_[id] = t;
   }
   else {
@@ -117,7 +119,8 @@ void GraphEdgeList<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_
     add_node(to, NODE_T{});
   }
   if ( !edge_exists(from, to) ){
-    adj_matrix_[from].push_back(to);
+    edge_list_from_[from].push_back(to);
+    edge_list_to_[to].push_back(fromx);
   }
   edge_data_[std::make_pair(from, to)] = t;
 }
@@ -125,8 +128,8 @@ void GraphEdgeList<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_
 template<typename NODE_T, typename EDGE_T>
 void GraphEdgeList<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
   if (edge_exists(from, to)) {
-    auto it = edge_list_[from].find(to);
-    adj_matrix_[from].erase(it);
+    edge_list_from_.erase(from);
+    edge_list_to_.erase(to);
     edge_data_.erase(std::make_pair(from, to));
   }
 }
@@ -135,7 +138,7 @@ template<typename NODE_T, typename EDGE_T>
 void GraphEdgeList<NODE_T, EDGE_T>::delete_node(NodeId id) {
   if (node_exists(id)) {
     node_data_.erase(id);
-    edge_list.erase(edge_list_.find(id));
+    edge_list_from_.erase(edge_list_.find(id));
     for ( auto ii : edge_list_) {
       delete_edge(ii.first, id);
     }
