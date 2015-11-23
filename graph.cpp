@@ -203,22 +203,30 @@ std::set<NodeId> GraphAdj<NODE_T, EDGE_T>::get_nodes() {
 
 template<typename NODE_T, typename EDGE_T>
 void depth_first(GraphAdj<NODE_T,EDGE_T> &G,
-                 std::queue<NodeId> &fifo,
+                 std::stack<NodeId, std::vector<NodeId>> &fifo,
                  std::set<NodeId> &all_node,
                  std::function<void(NODE_T&)> f) {
-  if (all_node.empty()) {
-    return;
+  if( fifo.empty()) {
+    if ( all_node.empty() ) {
+      return;
+    }
+    else {
+      fifo.push(*(all_node.begin()));
+    }
   }
-  if (fifo.empty()) {
-    fifo.push(*(all_node.begin()));
+  auto next_id = fifo.top();
+  fifo.pop();
+  while(all_node.find(next_id) == all_node.end()) {
+    if (fifo.empty()) {
+      depth_first(G, fifo, all_node, f);
+      return;
+    }
+    next_id = fifo.top();
+    fifo.pop();
   }
-  auto next_id = fifo.front();
-  while (all_node.find(next_id) == all_node.end() ) {
-    next_id = fifo.front();
-  }
-
   auto neigbors = G.from(next_id);
   //  all_node
+  std::cout << "call" << next_id << std::endl;
   G.call(next_id, f);
   for (auto i : neigbors) {
     fifo.push(i);
@@ -227,29 +235,32 @@ void depth_first(GraphAdj<NODE_T,EDGE_T> &G,
   depth_first(G, fifo, all_node, f);
 }
 
-
+// pelda melysegi bejaras az osztaly hasznalatara 
 template<typename NODE_T, typename EDGE_T>
 void DepthFirst(GraphAdj<NODE_T, EDGE_T> &G, NodeId start, std::function<void(NODE_T&)> f) {
-  auto neigbors = std::queue<NodeId>{G.from(start)};
+  auto n_vec = G.from(start);
+  std::stack<NodeId, std::vector<NodeId>> neigbors(n_vec);
   neigbors.push(start);
   auto all_node = G.get_nodes();
-  depth_first(G, neigbors, all_node, f);
+  depth_first(G,
+              neigbors,
+              all_node, f);
 }
 
 
 
 int main() {
   GraphAdj<int,int> G{10};
-  G.add_node(25, 1000);
-  G.delete_node(23);
   for (int ii = 0; ii < 5; ++ii) {
-    for ( int jj = 0; jj < 4; ++jj) {
-        G.add_edge(ii*2, jj*2+1, ii*10 + jj);
+    for ( int jj = 5; jj < 10; ++jj) {
+      G.add_node(ii, ii);
+      G.add_node(jj, jj);
+      G.add_edge(ii, jj, ii*100 + jj);
+      G.add_edge(jj, ii, ii*100 + jj);
     }
   }
-  G.delete_node(4);
   // G.call(2,[](int &x){std::cout << "labda " << x << std::endl; } );
-  DepthFirst<int,int>(G, 2, [](int &x){std::cout << "labda " << x << std::endl; });
+  DepthFirst<int,int>(G, 1, [](int &x){std::cout << "labda " << x << std::endl; });
   /* for (auto it = G.node_begin(); it != G.node_end(); ++it) {
     std::cout << "==== " << it->first <<  " ===="<< std::endl;
     auto to = G.from(it->first);
