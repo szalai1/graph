@@ -247,33 +247,3 @@ void DepthFirst(GraphAdj<NODE_T, EDGE_T> &G, NodeId start, std::function<void(NO
               all_node, f);
 }
 
-
-
-int main() {
-  GraphAdj<int,int> G{10};
-  for (int ii = 0; ii < 5; ++ii) {
-    for ( int jj = 5; jj < 10; ++jj) {
-      G.add_node(ii, ii);
-      G.add_node(jj, jj);
-      G.add_edge(ii, jj, ii*100 + jj);
-      G.add_edge(jj, ii, ii*100 + jj);
-    }
-  }
-  // G.call(2,[](int &x){std::cout << "labda " << x << std::endl; } );
-  DepthFirst<int,int>(G, 1, [](int &x){std::cout << "labda " << x << std::endl; });
-  /* for (auto it = G.node_begin(); it != G.node_end(); ++it) {
-    std::cout << "==== " << it->first <<  " ===="<< std::endl;
-    auto to = G.from(it->first);
-    G.call(it->first,[](int &x) {
-        x+=42;
-        std::cout << "node value : " << x << std::endl;});
-        G.call(it->first,[](int &x) {
-        x+=42;
-        std::cout << "node value : " << x << std::endl;});
-    for (auto ii : to) {
-      std::cout << " " << ii << std::endl;
-    }
-    }*/
-
-}
-

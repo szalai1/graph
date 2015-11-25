@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <vector>
 #include <stack>
 #include <queue>
@@ -14,7 +15,7 @@ typedef size_t NodeId;
  * Ellistaval
  * Akkor hatekony, ha az id-kat 0-tol folytonsan hasznaljuk.
  * NODE_T es EDGE_T -nek legyen default construktora
- */
+ **/
 template<typename NODE_T, typename EDGE_T>
 class GraphEdgeList {
  public:
@@ -30,7 +31,7 @@ class GraphEdgeList {
   void delete_edge(NodeId, NodeId);
   void delete_node(NodeId);
   bool node_exists(NodeId) const;
-  bool edge_exists(NodeId, NodeId) const;
+  bool edge_exists(NodeId, NodeId);
   /**
    * Iterator az elekhez
    */
@@ -86,10 +87,10 @@ bool GraphEdgeList<NODE_T, EDGE_T>::node_exists(NodeId id) const {
 }
 
 template<typename NODE_T, typename EDGE_T>
-bool GraphEdgeList<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
+bool GraphEdgeList<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) {
   return node_exists(from) &&
     node_exists(to) &&
-    (edge_list_from_[from]).find(to) != (edge_list_from_[from]).end();
+    find(edge_list_from_[from].begin(), edge_list_from_[from].end(),to) != edge_list_from_[from].end();
 }
 /*
 template<typename NODE_T, typename EDGE_T>
@@ -237,35 +238,5 @@ void DepthFirst(GraphEdgeList<NODE_T, EDGE_T> &G, NodeId start, std::function<vo
   depth_first(G,
               neigbors,
               all_node, f);
-}
-
-
-
-int main() {
-  GraphEdgeList<int,int> G{10};
-  for (int ii = 0; ii < 5; ++ii) {
-    for ( int jj = 5; jj < 10; ++jj) {
-      G.add_node(ii, ii);
-      G.add_node(jj, jj);
-      G.add_edge(ii, jj, ii*100 + jj);
-      G.add_edge(jj, ii, ii*100 + jj);
-    }
-  }
-  // G.call(2,[](int &x){std::cout << "labda " << x << std::endl; } );
-  DepthFirst<int,int>(G, 1, [](int &x){std::cout << "labda " << x << std::endl; });
-  /* for (auto it = G.node_begin(); it != G.node_end(); ++it) {
-    std::cout << "==== " << it->first <<  " ===="<< std::endl;
-    auto to = G.from(it->first);
-    G.call(it->first,[](int &x) {
-        x+=42;
-        std::cout << "node value : " << x << std::endl;});
-        G.call(it->first,[](int &x) {
-        x+=42;
-        std::cout << "node value : " << x << std::endl;});
-    for (auto ii : to) {
-      std::cout << " " << ii << std::endl;
-    }
-    }*/
-
 }
 
