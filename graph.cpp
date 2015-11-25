@@ -19,7 +19,9 @@ template<typename NODE_T, typename EDGE_T>
 class GraphEdgeList {
  public:
   GraphEdgeList(size_t max_node) {
-    expand(max_node);
+    for ( NodeId ii = 0; ii <= max_node; ++ii) {
+      add_node(ii, NODE_T{});
+    }
   }
   NODE_T& get_node(NodeId);
   EDGE_T& get_edge(NodeId, NodeId);
@@ -50,8 +52,10 @@ class GraphEdgeList {
  private:
   //void expand(size_t max);
   std::vector<bool> used_node_;
-  std::map<NodeId,std::vector<bool>> edge_list_from_;
-  std::map<NodeId,std::vector<bool>> edge_list_to_;
+  // i -> {a,b,c}; i bol a-ba b-be c-be van el
+  std::map<NodeId, std::vector<NodeId>> edge_list_from_;
+  // i -> {a,b,c}; i -be a-bol b-bol c-bol lehet eljutni
+  std::map<NodeId, std::vector<NodeId>> edge_list_to_;
   std::map<NodeId, NODE_T> node_data_;
   std::map<std::pair<NodeId, NodeId>, EDGE_T> edge_data_;
 };
@@ -78,12 +82,14 @@ typename std::map<NodeId, NODE_T>::iterator GraphEdgeList<NODE_T, EDGE_T>::node_
 
 template<typename NODE_T, typename EDGE_T>
 bool GraphEdgeList<NODE_T, EDGE_T>::node_exists(NodeId id) const {
-  return edge_list_.find(id) != edge_list_from_.end();
+  return edge_list_from_.find(id) != edge_list_from_.end();
 }
 
 template<typename NODE_T, typename EDGE_T>
 bool GraphEdgeList<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
-  return node_exists(from) && node_exists(to) && edge_list_from_[from].find(to) != edge_list_from_[from].end();
+  return node_exists(from) &&
+    node_exists(to) ;//&&
+  //    edge_list_from_[from].find(to) != edge_list_from_[from].end();
 }
 /*
 template<typename NODE_T, typename EDGE_T>
@@ -100,14 +106,11 @@ void GraphEdgeList<NODE_T, EDGE_T>::expand(size_t max) {
 */
 template<typename NODE_T, typename EDGE_T>
 void GraphEdgeList<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
-  if (edge_list_.find(id) == edge_list_.end()) {
+  if (!node_exists(id)) {
     edge_list_from_[id] = std::vector<NodeId>{};
     edge_list_to_[id] = std::vector<NodeId>{};
-    node_data_[id] = t;
   }
-  else {
-    node_data_[id] = t;
-  }
+  node_data_[id] = t;
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -120,7 +123,7 @@ void GraphEdgeList<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_
   }
   if ( !edge_exists(from, to) ){
     edge_list_from_[from].push_back(to);
-    edge_list_to_[to].push_back(fromx);
+    edge_list_to_[to].push_back(from);
   }
   edge_data_[std::make_pair(from, to)] = t;
 }
@@ -137,11 +140,11 @@ void GraphEdgeList<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
 template<typename NODE_T, typename EDGE_T>
 void GraphEdgeList<NODE_T, EDGE_T>::delete_node(NodeId id) {
   if (node_exists(id)) {
-    node_data_.erase(id);
-    edge_list_from_.erase(edge_list_.find(id));
-    for ( auto ii : edge_list_) {
-      delete_edge(ii.first, id);
+    for (auto i: edge_list_from_[from]) {
+      delete_edge(from, i);
     }
+    node_data_.erase(id);
+    edge_list_from_.erase(edge_list_from_.find(id));
   }
 }
 
@@ -167,30 +170,25 @@ EDGE_T& GraphEdgeList<NODE_T, EDGE_T>::get_edge(NodeId from, NodeId to) {
 
 template<typename NODE_T, typename EDGE_T>
 std::vector<NodeId> GraphEdgeList<NODE_T, EDGE_T>::from(NodeId id) {
-  std::vector<NodeId> from_{};
-  for (NodeId ii = 0; ii < adj_matrix_.size(); ++ii) {
-    if (adj_matrix_[id][ii]) {
-      from_.push_back(ii);
-    }
+  if ( node_exists(id)) {
+    return edge_list_from_[id];
   }
-  return from_;
+  throw std::out_of_range("GraphEdgeList::from");
 }
 
 template<typename NODE_T, typename EDGE_T>
 std::vector<NodeId> GraphEdgeList<NODE_T, EDGE_T>::to(NodeId id) {
-  if (node_exists(id)) {
-    return edge_list_[id];
+  if ( node_exists(id)) {
+    return edge_list_to_[id];
   }
-  return std::vector{};
+  throw std::out_of_range("GraphEdgeList::from");
 }
 
 template<typename NODE_T, typename EDGE_T>
 std::set<NodeId> GraphEdgeList<NODE_T, EDGE_T>::get_nodes() {
   std::set<NodeId> nodes;
-  for (NodeId ii = 0; ii < used_node_.size();++ii) {
-    if (used_node_[ii]) {
-      nodes.insert(ii);
-    }
+  for ( auto it : edge_list_to_) {
+    nodes.insert(it.first);
   }
   return nodes;
 }
