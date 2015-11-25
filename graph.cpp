@@ -88,8 +88,8 @@ bool GraphEdgeList<NODE_T, EDGE_T>::node_exists(NodeId id) const {
 template<typename NODE_T, typename EDGE_T>
 bool GraphEdgeList<NODE_T, EDGE_T>::edge_exists(NodeId from, NodeId to) const {
   return node_exists(from) &&
-    node_exists(to) ;//&&
-  //    edge_list_from_[from].find(to) != edge_list_from_[from].end();
+    node_exists(to) &&
+    (edge_list_from_[from]).find(to) != (edge_list_from_[from]).end();
 }
 /*
 template<typename NODE_T, typename EDGE_T>
