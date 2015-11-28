@@ -42,9 +42,9 @@ class GraphAdj {
   std::vector<NodeId> from(NodeId);
   std::vector<NodeId> to(NodeId);
   std::set<NodeId> get_nodes();
-  void call(NodeId id, std::function<void(NODE_T&)> f) {
+  void call(NodeId id, std::function<void(NODE_T&,NodeId&)> f) {
     if (node_exists(id)) {
-      f(node_data_[id]);
+      f(node_data_[id], id);
     }
   }
  private:
@@ -200,50 +200,3 @@ std::set<NodeId> GraphAdj<NODE_T, EDGE_T>::get_nodes() {
   }
   return nodes;
 }
-
-template<typename NODE_T, typename EDGE_T>
-void depth_first(GraphAdj<NODE_T,EDGE_T> &G,
-                 std::stack<NodeId, std::vector<NodeId>> &fifo,
-                 std::set<NodeId> &all_node,
-                 std::function<void(NODE_T&)> f) {
-  if( fifo.empty()) {
-    if ( all_node.empty() ) {
-      return;
-    }
-    else {
-      fifo.push(*(all_node.begin()));
-    }
-  }
-  auto next_id = fifo.top();
-  fifo.pop();
-  while(all_node.find(next_id) == all_node.end()) {
-    if (fifo.empty()) {
-      depth_first(G, fifo, all_node, f);
-      return;
-    }
-    next_id = fifo.top();
-    fifo.pop();
-  }
-  auto neigbors = G.from(next_id);
-  //  all_node
-  std::cout << "call" << next_id << std::endl;
-  G.call(next_id, f);
-  for (auto i : neigbors) {
-    fifo.push(i);
-  }
-  all_node.erase(next_id);
-  depth_first(G, fifo, all_node, f);
-}
-
-// pelda melysegi bejaras az osztaly hasznalatara 
-template<typename NODE_T, typename EDGE_T>
-void DepthFirst(GraphAdj<NODE_T, EDGE_T> &G, NodeId start, std::function<void(NODE_T&)> f) {
-  auto n_vec = G.from(start);
-  std::stack<NodeId, std::vector<NodeId>> neigbors(n_vec);
-  neigbors.push(start);
-  auto all_node = G.get_nodes();
-  depth_first(G,
-              neigbors,
-              all_node, f);
-}
-
