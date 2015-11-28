@@ -112,15 +112,19 @@ void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
   if (!used_node_[id]) {
     used_node_[id] = true;
     node_data_[id] = t;
+    number_of_nodes_+=1;
   }
   else {
     node_data_[id] = t;
   }
-  number_of_nodes_+=1;
 }
 
 template<typename NODE_T, typename EDGE_T>
 void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t) {
+  if ( edge_exists(from, to)) {
+    edge_data_[std::make_pair(from, to)] = t;
+    return;
+  }
   if (!node_exists(from)) {
     add_node(from, NODE_T{});
   }
@@ -128,8 +132,6 @@ void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t)
     add_node(to, NODE_T{});
   }
   expand(from > to ? from+1 : to+1);
-  used_node_[from] = true;
-  used_node_[to] = true;
   adj_matrix_[from][to] = true;
   edge_data_[std::make_pair(from, to)] = t;
   number_of_edges_+=1;
@@ -140,8 +142,8 @@ void GraphAdj<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
   if (edge_exists(from, to)) {
     adj_matrix_[from][to] = false;
     edge_data_.erase(std::make_pair(from, to));
+    number_of_edges_-=1;
   }
-  number_of_edges_-=1;
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -157,8 +159,8 @@ void GraphAdj<NODE_T, EDGE_T>::delete_node(NodeId id) {
         delete_edge(id, ii);
       }
     }
+    number_of_nodes_-=1;
   }
-  number_of_nodes_-=1;
 }
 
 template<typename NODE_T, typename EDGE_T>
