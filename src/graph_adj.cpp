@@ -19,6 +19,8 @@ template<typename NODE_T, typename EDGE_T>
 class GraphAdj {
  public:
   GraphAdj(size_t max_node) {
+    number_of_nodes_ = 0;
+    number_of_edges_ = 0;
     expand(max_node);
   }
   NODE_T& get_node(NodeId);
@@ -47,7 +49,12 @@ class GraphAdj {
       f(node_data_[id], id);
     }
   }
+  size_t number_of_nodes() { return number_of_nodes_;}
+  size_t number_of_edges() { return number_of_edges_;}
+  
  private:
+  size_t number_of_nodes_;
+  size_t number_of_edges_;
   void expand(size_t max);
   std::vector<bool> used_node_;
   std::vector<std::vector<bool>> adj_matrix_;
@@ -56,12 +63,14 @@ class GraphAdj {
 };
 
 template<typename NODE_T, typename EDGE_T>
-typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_begin() {
+typename std::map<std::pair<NodeId, NodeId>,
+                  EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_begin() {
     return edge_data_.begin();
 }
 
 template<typename NODE_T, typename EDGE_T>
-typename std::map<std::pair<NodeId, NodeId>, EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_end() {
+typename std::map<std::pair<NodeId, NodeId>,
+                  EDGE_T>::iterator GraphAdj<NODE_T, EDGE_T>::edge_end() {
     return edge_data_.end();
 }
 
@@ -107,6 +116,7 @@ void GraphAdj<NODE_T, EDGE_T>::add_node(NodeId id, const NODE_T &t) {
   else {
     node_data_[id] = t;
   }
+  number_of_nodes_+=1;
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -122,6 +132,7 @@ void GraphAdj<NODE_T, EDGE_T>::add_edge(NodeId from, NodeId to, const EDGE_T &t)
   used_node_[to] = true;
   adj_matrix_[from][to] = true;
   edge_data_[std::make_pair(from, to)] = t;
+  number_of_edges_+=1;
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -130,6 +141,7 @@ void GraphAdj<NODE_T, EDGE_T>::delete_edge(NodeId from, NodeId to) {
     adj_matrix_[from][to] = false;
     edge_data_.erase(std::make_pair(from, to));
   }
+  number_of_edges_-=1;
 }
 
 template<typename NODE_T, typename EDGE_T>
@@ -146,6 +158,7 @@ void GraphAdj<NODE_T, EDGE_T>::delete_node(NodeId id) {
       }
     }
   }
+  number_of_nodes_-=1;
 }
 
 template<typename NODE_T, typename EDGE_T>

@@ -78,3 +78,47 @@ TEST(GraphAdj, DepthFist) {
     EXPECT_EQ(1, it->second);
   }
 }
+
+//test2
+//ellenorzi a csucsok hozzadasaval/ torleseel kapcsolatos dolgokat
+TEST(GraphAdj, Nodes) {
+  using Graph = GraphAdj<int, int>;
+  Graph G{10};
+  EXPECT_EQ(0, G.number_of_nodes());
+  for ( int ii = 0; ii < 9; ++ii) {
+    G.add_node(ii*10, ii);
+    EXPECT_EQ(ii+1, G.number_of_nodes());
+  }
+  for ( int ii = 0; ii < 3; ++ii) {
+    G.delete_node(ii*10);
+  }
+  EXPECT_EQ(6, G.number_of_nodes());
+  size_t num = 0;
+  for ( auto it = G.node_begin(); it != G.node_end(); ++it) { 
+    ++num;
+    EXPECT_EQ(0, (it->first)%10);
+  }
+  EXPECT_EQ(6, num);
+}
+
+//test3
+// elekkel kapcsolatos testek
+TEST(GraphAdj, Edges) {
+  using Graph = GraphAdj<int, int>;
+  Graph G{10};
+  for ( NodeId id = 1; id < 8; ++id) {
+    G.add_edge(0, id, id + 3);
+    G.add_edge(id, 0, id + 2);
+  }
+  EXPECT_EQ(8, G.number_of_nodes());
+  G.add_edge(8,2,0);
+  EXPECT_EQ(15, G.number_of_edges());
+  size_t from_0 = G.from(0).size();
+  size_t from_8 = G.from(8).size();
+  size_t to_8 = G.to(8).size();
+  size_t to_2 = G.to(2).size();
+  EXPECT_EQ(7, from_0);
+  EXPECT_EQ(1, from_8);
+  EXPECT_EQ(0, to_8);
+  EXPECT_EQ(2, to_2);
+}
